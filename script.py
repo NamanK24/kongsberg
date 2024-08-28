@@ -105,12 +105,11 @@ if uploaded_file is not None:
         cap.release()
         out.release()
 
-        # Ensure the video file is closed before trying to play it
+        # Ensure the video is completely written before trying to play it
         st.write("Detection complete. Preparing to display video...")
 
         # Display the output video
-        with open(output_video_path, "rb") as video_file:
-            st.video(video_file.read())
+        st.video(output_video_path)
 
     else:
         st.error("Unsupported file type! Please upload an image or a video.")
