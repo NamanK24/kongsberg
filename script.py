@@ -71,14 +71,15 @@ if uploaded_file is not None:
         # Open the video file
         cap = cv2.VideoCapture(video_path)
         fps = int(cap.get(cv2.CAP_PROP_FPS))
-        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        # Set the output video resolution to 640x640
+        output_size = (640, 640)
 
         # Create a temporary file to save the output video
         temp_output_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
         output_video_path = temp_output_file.name
         out = cv2.VideoWriter(
-            output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height)
+            output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, output_size
         )
 
         while cap.isOpened():
@@ -86,8 +87,11 @@ if uploaded_file is not None:
             if not ret:
                 break
 
+            # Resize the frame to 640x640
+            frame_resized = cv2.resize(frame, output_size)
+
             # Convert frame to tensor and add batch dimension
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame_rgb = cv2.cvtColor(frame_resized, cv2.COLOR_BGR2RGB)
             frame_pil = Image.fromarray(frame_rgb)
             image_tensor = transforms.ToTensor()(frame_pil).unsqueeze(0).to(device)
 
@@ -109,8 +113,16 @@ if uploaded_file is not None:
         st.write("Detection complete. Preparing to display video...")
 
         # Provide a video player for the processed video
-        with open(output_video_path, "rb") as file:
-            st.video(file.read())
+        st.video(output_video_path, format="video/mp4")
+
+        # Provide a download button for the processed video
+        with open(output_video_path, "rb") as video_file:
+            st.download_button(
+                label="Download Processed Video",
+                data=video_file,
+                file_name="processed_video.mp4",
+                mime="video/mp4",
+            )
 
     else:
         st.error("Unsupported file type! Please upload an image or a video.")
