@@ -15,7 +15,7 @@ model.to(device)
 st.title("YOLOv8 Object Detection with Streamlit")
 
 # File uploader for images
-uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+uploaded_file = st.file_uploader("Choose an image or a video...", type=["jpg", "jpeg", "png", "mp4"])
 
 if uploaded_file is not None:
     # Load image with PIL
