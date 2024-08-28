@@ -75,7 +75,7 @@ if uploaded_file is not None:
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
         # Create a temporary file to save the output video
-        output_video_path = tempfile.mktemp(suffix=".mp4")
+        output_video_path = "processed_video.mp4"
         out = cv2.VideoWriter(
             output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (640, 640)
         )
@@ -108,22 +108,22 @@ if uploaded_file is not None:
         out.release()
 
         # Ensure the video is completely written before trying to play it
-        st.write("Detection complete. Preparing to display video...")
+        st.write("Detection complete. Video saved as 'processed_video.mp4'.")
 
-        # Check if the video file was created and is non-zero in size
-        if os.path.getsize(output_video_path) > 0:
-            st.video(output_video_path)
+        # Provide a download button for the processed video
+        with open(output_video_path, "rb") as file:
+            btn = st.download_button(
+                label="Download processed video",
+                data=file,
+                file_name="processed_video.mp4",
+                mime="video/mp4",
+            )
 
-            # Provide a download button for the processed video
-            with open(output_video_path, "rb") as file:
-                btn = st.download_button(
-                    label="Download processed video",
-                    data=file,
-                    file_name="processed_video.mp4",
-                    mime="video/mp4",
-                )
-        else:
-            st.error("Failed to process the video. The output file is empty.")
+        # Provide a link to open the video in a new tab
+        st.markdown(
+            f"<a href='processed_video.mp4' target='_blank'>Click here to open the processed video in a new tab</a>",
+            unsafe_allow_html=True,
+        )
 
     else:
         st.error("Unsupported file type! Please upload an image or a video.")
