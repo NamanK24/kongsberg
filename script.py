@@ -5,6 +5,7 @@ import torchvision.transforms as transforms
 import cv2
 import tempfile
 import os
+import torch
 
 # Force the use of CPU
 device = "cpu"
@@ -95,21 +96,32 @@ if uploaded_file is not None:
         # Create a progress bar
         progress_bar = st.progress(0)
 
+        # Define transform for resizing frames
+        transform = transforms.Compose(
+            [
+                transforms.ToPILImage(),
+                transforms.Resize((640, 640)),
+                transforms.ToTensor(),
+            ]
+        )
+
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
                 break
 
-            # Convert frame to tensor and add batch dimension
+            # Resize and convert frame to tensor
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            frame_pil = Image.fromarray(frame_rgb)
-            image_tensor = transforms.ToTensor()(frame_pil).unsqueeze(0).to(device)
+            frame_tensor = transform(frame_rgb).unsqueeze(0).to(device)
 
             # Run inference on the frame
-            results = model(image_tensor)
+            results = model(frame_tensor)
 
-            # Plot bounding boxes on the frame
+            # Plot bounding boxes on the original frame
             result_frame = results[0].plot()
+
+            # Resize result frame back to original size
+            result_frame = cv2.resize(result_frame, (width, height))
 
             # Convert back to BGR for OpenCV and write the frame
             result_frame_bgr = cv2.cvtColor(result_frame, cv2.COLOR_RGB2BGR)
@@ -137,7 +149,7 @@ if uploaded_file is not None:
             label="Download Processed Video",
             data=video_bytes,
             file_name="processed_video.mp4",
-            mime="video/mp4", 
+            mime="video/mp4",
         )
 
         # Clean up temporary files
