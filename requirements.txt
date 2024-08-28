@@ -3,3 +3,4 @@ ultralytics==8.0.120
 pillow==9.5.0
 torch==2.0.1
 torchvision==0.15.2
+opencv-python-headless==4.7.0.72
