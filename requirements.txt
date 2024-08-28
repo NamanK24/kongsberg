@@ -1,0 +1,5 @@
+streamlit==1.22.0
+ultralytics==8.0.120
+pillow==9.5.0
+torch==2.0.1
+torchvision==0.15.2
