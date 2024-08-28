@@ -5,7 +5,7 @@ import torchvision.transforms as transforms
 import cv2
 import tempfile
 import os
-import subprocess
+import ffmpeg
 
 # Force the use of CPU
 device = "cpu"
@@ -136,26 +136,19 @@ if uploaded_file is not None:
 
         st.write("Detection complete. Preparing video for playback...")
 
-        # Use FFmpeg to convert the video to a web-compatible format
+        # Use ffmpeg-python to convert the video to a web-compatible format
         webm_output = tempfile.NamedTemporaryFile(delete=False, suffix=".webm").name
-        subprocess.call(
-            [
-                "ffmpeg",
-                "-i",
-                output_video_path,
-                "-c:v",
-                "libvpx-vp9",
-                "-crf",
-                "30",
-                "-b:v",
-                "0",
-                "-b:a",
-                "128k",
-                "-c:a",
-                "libopus",
-                webm_output,
-            ]
-        )
+
+        try:
+            (
+                ffmpeg.input(output_video_path)
+                .output(webm_output, vcodec="libvpx-vp9", crf=30, acodec="libopus")
+                .overwrite_output()
+                .run(capture_stdout=True, capture_stderr=True)
+            )
+        except ffmpeg.Error as e:
+            st.error(f"Error during video conversion: {e.stderr.decode()}")
+            st.stop()
 
         # Read the processed video file
         with open(webm_output, "rb") as file:
