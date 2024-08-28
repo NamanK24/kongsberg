@@ -109,13 +109,9 @@ if uploaded_file is not None:
         cap.release()
         out.release()
 
-        # Ensure the video is completely written before trying to play it
-        st.write("Detection complete. Preparing to display video...")
+        st.write("Detection complete. Displaying video...")
 
-        # Fix: Wait for the file to be fully written to disk
-        out.release()
-
-        # Provide a video player for the processed video
+        # Use st.video to display the processed video
         st.video(output_video_path)
 
         # Provide a download button for the processed video
