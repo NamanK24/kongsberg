@@ -5,7 +5,7 @@ import torchvision.transforms as transforms
 import cv2
 import tempfile
 import os
-import torch
+import subprocess
 
 # Force the use of CPU
 device = "cpu"
@@ -85,10 +85,9 @@ if uploaded_file is not None:
         temp_output_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
         output_video_path = temp_output_file.name
 
-        # Use FFMPEG writer
-        out = cv2.VideoWriter(
-            output_video_path, cv2.VideoWriter_fourcc(*"avc1"), fps, (width, height)
-        )
+        # Use OpenCV VideoWriter
+        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+        out = cv2.VideoWriter(output_video_path, fourcc, fps, (width, height))
 
         frame_count = 0
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -137,8 +136,29 @@ if uploaded_file is not None:
 
         st.write("Detection complete. Preparing video for playback...")
 
+        # Use FFmpeg to convert the video to a web-compatible format
+        webm_output = tempfile.NamedTemporaryFile(delete=False, suffix=".webm").name
+        subprocess.call(
+            [
+                "ffmpeg",
+                "-i",
+                output_video_path,
+                "-c:v",
+                "libvpx-vp9",
+                "-crf",
+                "30",
+                "-b:v",
+                "0",
+                "-b:a",
+                "128k",
+                "-c:a",
+                "libopus",
+                webm_output,
+            ]
+        )
+
         # Read the processed video file
-        with open(output_video_path, "rb") as file:
+        with open(webm_output, "rb") as file:
             video_bytes = file.read()
 
         # Display the video using st.video
@@ -148,13 +168,14 @@ if uploaded_file is not None:
         st.download_button(
             label="Download Processed Video",
             data=video_bytes,
-            file_name="processed_video.mp4",
-            mime="video/mp4",
+            file_name="processed_video.webm",
+            mime="video/webm",
         )
 
         # Clean up temporary files
         os.unlink(video_path)
         os.unlink(output_video_path)
+        os.unlink(webm_output)
 
     else:
         st.error("Unsupported file type! Please upload an image or a video.")
