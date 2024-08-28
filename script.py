@@ -113,6 +113,15 @@ if uploaded_file is not None:
         # Check if the video file was created and is non-zero in size
         if os.path.getsize(output_video_path) > 0:
             st.video(output_video_path)
+
+            # Provide a download button for the processed video
+            with open(output_video_path, "rb") as file:
+                btn = st.download_button(
+                    label="Download processed video",
+                    data=file,
+                    file_name="processed_video.mp4",
+                    mime="video/mp4",
+                )
         else:
             st.error("Failed to process the video. The output file is empty.")
 
