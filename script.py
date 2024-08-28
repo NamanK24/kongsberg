@@ -1,7 +1,6 @@
 import streamlit as st
 from ultralytics import YOLO
 from PIL import Image
-import torch
 import torchvision.transforms as transforms
 import cv2
 import tempfile
@@ -72,6 +71,8 @@ if uploaded_file is not None:
         # Open the video file
         cap = cv2.VideoCapture(video_path)
         fps = int(cap.get(cv2.CAP_PROP_FPS))
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
         # Create a temporary file to save the output video
         output_video_path = tempfile.mktemp(suffix=".mp4")
@@ -102,14 +103,18 @@ if uploaded_file is not None:
             result_frame_bgr = cv2.cvtColor(result_frame, cv2.COLOR_RGB2BGR)
             out.write(result_frame_bgr)
 
+        # Release resources
         cap.release()
         out.release()
 
         # Ensure the video is completely written before trying to play it
         st.write("Detection complete. Preparing to display video...")
 
-        # Display the output video
-        st.video(output_video_path)
+        # Check if the video file was created and is non-zero in size
+        if os.path.getsize(output_video_path) > 0:
+            st.video(output_video_path)
+        else:
+            st.error("Failed to process the video. The output file is empty.")
 
     else:
         st.error("Unsupported file type! Please upload an image or a video.")
