@@ -94,15 +94,6 @@ if uploaded_file is not None:
         # Create a progress bar
         progress_bar = st.progress(0)
 
-        # Define transform for resizing frames
-        transform = transforms.Compose(
-            [
-                transforms.ToPILImage(),
-                transforms.Resize((640, 640)),
-                transforms.ToTensor(),
-            ]
-        )
-
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
@@ -110,10 +101,10 @@ if uploaded_file is not None:
 
             # Resize and convert frame to tensor
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            frame_tensor = transform(frame_rgb).unsqueeze(0).to(device)
+            frame_resized = cv2.resize(frame_rgb, (640, 640))
 
             # Run inference on the frame
-            results = model(frame_tensor)
+            results = model(frame_resized)
 
             # Plot bounding boxes on the original frame
             result_frame = results[0].plot()
