@@ -71,14 +71,12 @@ if uploaded_file is not None:
 
         # Open the video file
         cap = cv2.VideoCapture(video_path)
-        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         fps = int(cap.get(cv2.CAP_PROP_FPS))
 
         # Create a temporary file to save the output video
         output_video_path = tempfile.mktemp(suffix=".mp4")
         out = cv2.VideoWriter(
-            output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height)
+            output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (640, 640)
         )
 
         while cap.isOpened():
@@ -86,8 +84,11 @@ if uploaded_file is not None:
             if not ret:
                 break
 
+            # Resize the frame to 640x640
+            frame_resized = cv2.resize(frame, (640, 640))
+
             # Convert frame to tensor and add batch dimension
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame_rgb = cv2.cvtColor(frame_resized, cv2.COLOR_BGR2RGB)
             frame_pil = Image.fromarray(frame_rgb)
             image_tensor = transforms.ToTensor()(frame_pil).unsqueeze(0).to(device)
 
