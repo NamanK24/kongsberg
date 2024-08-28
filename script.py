@@ -78,7 +78,7 @@ if uploaded_file is not None:
         temp_output_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
         output_video_path = temp_output_file.name
         out = cv2.VideoWriter(
-            output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (640, 640)
+            output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height)
         )
 
         while cap.isOpened():
@@ -86,11 +86,8 @@ if uploaded_file is not None:
             if not ret:
                 break
 
-            # Resize the frame to 640x640
-            frame_resized = cv2.resize(frame, (640, 640))
-
             # Convert frame to tensor and add batch dimension
-            frame_rgb = cv2.cvtColor(frame_resized, cv2.COLOR_BGR2RGB)
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame_pil = Image.fromarray(frame_rgb)
             image_tensor = transforms.ToTensor()(frame_pil).unsqueeze(0).to(device)
 
@@ -109,10 +106,11 @@ if uploaded_file is not None:
         out.release()
 
         # Ensure the video is completely written before trying to play it
-        st.write("Detection complete. Video saved as 'processed_video.mp4'.")
+        st.write("Detection complete. Preparing to display video...")
 
         # Provide a video player for the processed video
-        st.video(output_video_path, format="video/mp4")
+        with open(output_video_path, "rb") as file:
+            st.video(file.read())
 
     else:
         st.error("Unsupported file type! Please upload an image or a video.")
