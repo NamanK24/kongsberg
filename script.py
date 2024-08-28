@@ -104,6 +104,9 @@ if uploaded_file is not None:
         cap.release()
         out.release()
 
+        # Ensure the video file is closed before trying to play it
+        st.write("Detection complete. Preparing to display video...")
+
         # Display the output video
         st.video(output_video_path)
 
