@@ -112,8 +112,7 @@ if uploaded_file is not None:
         st.write("Detection complete. Video saved as 'processed_video.mp4'.")
 
         # Provide a video player for the processed video
-        with open(output_video_path, "rb") as file:
-            st.video(file, format="video/mp4")
+        st.video(output_video_path, format="video/mp4")
 
     else:
         st.error("Unsupported file type! Please upload an image or a video.")
