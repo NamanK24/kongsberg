@@ -129,12 +129,12 @@ if uploaded_file is not None:
 
         st.write("Detection complete. Preparing video for playback...")
 
-        # Read the processed video file
+        # Automatically play the video
+        st.video(output_video_path)
+
+        # Automatically download the video after processing
         with open(output_video_path, "rb") as file:
             video_bytes = file.read()
-
-        # Display the video using st.video (using the file path)
-        st.video(output_video_path)
 
         # Provide a download button for the processed video
         st.download_button(
