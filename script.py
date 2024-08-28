@@ -10,8 +10,14 @@ import os
 device = "cpu"
 st.write(f"Using device: {device}")
 
+
 # Load the trained YOLOv8 model
-model = YOLO("ppe.pt")  # Replace with the path to your ppe.pt file
+@st.cache_resource
+def load_model():
+    return YOLO("ppe.pt")  # Replace with the path to your ppe.pt file
+
+
+model = load_model()
 model.to(device)
 
 st.title("YOLOv8 Object Detection with Streamlit")
@@ -62,7 +68,7 @@ if uploaded_file is not None:
 
     elif file_extension == ".mp4":
         # Process as video
-        tfile = tempfile.NamedTemporaryFile(delete=False)
+        tfile = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
         tfile.write(uploaded_file.read())
         video_path = tfile.name
 
@@ -71,27 +77,31 @@ if uploaded_file is not None:
         # Open the video file
         cap = cv2.VideoCapture(video_path)
         fps = int(cap.get(cv2.CAP_PROP_FPS))
-
-        # Set the output video resolution to 640x640
-        output_size = (640, 640)
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
         # Create a temporary file to save the output video
         temp_output_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
         output_video_path = temp_output_file.name
+
+        # Use FFMPEG writer
         out = cv2.VideoWriter(
-            output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, output_size
+            output_video_path, cv2.VideoWriter_fourcc(*"avc1"), fps, (width, height)
         )
+
+        frame_count = 0
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+        # Create a progress bar
+        progress_bar = st.progress(0)
 
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
                 break
 
-            # Resize the frame to 640x640
-            frame_resized = cv2.resize(frame, output_size)
-
             # Convert frame to tensor and add batch dimension
-            frame_rgb = cv2.cvtColor(frame_resized, cv2.COLOR_BGR2RGB)
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame_pil = Image.fromarray(frame_rgb)
             image_tensor = transforms.ToTensor()(frame_pil).unsqueeze(0).to(device)
 
@@ -105,23 +115,34 @@ if uploaded_file is not None:
             result_frame_bgr = cv2.cvtColor(result_frame, cv2.COLOR_RGB2BGR)
             out.write(result_frame_bgr)
 
+            # Update progress bar
+            frame_count += 1
+            progress_bar.progress(frame_count / total_frames)
+
         # Release resources
         cap.release()
         out.release()
 
-        st.write("Detection complete. Displaying video...")
+        st.write("Detection complete. Preparing video for playback...")
 
-        # Use st.video to display the processed video
-        st.video(output_video_path)
+        # Read the processed video file
+        with open(output_video_path, "rb") as file:
+            video_bytes = file.read()
+
+        # Display the video using st.video
+        st.video(video_bytes)
 
         # Provide a download button for the processed video
-        with open(output_video_path, "rb") as video_file:
-            st.download_button(
-                label="Download Processed Video",
-                data=video_file,
-                file_name="processed_video.mp4",
-                mime="video/mp4",
-            )
+        st.download_button(
+            label="Download Processed Video",
+            data=video_bytes,
+            file_name="processed_video.mp4",
+            mime="video/mp4", 
+        )
+
+        # Clean up temporary files
+        os.unlink(video_path)
+        os.unlink(output_video_path)
 
     else:
         st.error("Unsupported file type! Please upload an image or a video.")
