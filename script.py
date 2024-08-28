@@ -131,7 +131,7 @@ if uploaded_file is not None:
             video_bytes = file.read()
 
         # Display the video using st.video
-        st.video(video_bytes)
+        st.video(output_video_path)
 
         # Provide a download button for the processed video
         st.download_button(
