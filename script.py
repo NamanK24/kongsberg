@@ -23,9 +23,10 @@ uploaded_file = st.file_uploader(
 )
 
 if uploaded_file is not None:
-    # Check if the uploaded file is an image
-    if uploaded_file.type in ["image/jpeg", "image/png"]:
-        # Load image with PIL
+    file_extension = os.path.splitext(uploaded_file.name)[1].lower()
+
+    if file_extension in [".jpg", ".jpeg", ".png"]:
+        # Process as image
         image = Image.open(uploaded_file)
 
         # Display the uploaded image
@@ -60,76 +61,51 @@ if uploaded_file is not None:
                 result_img_pil, caption=f"Detected Image {i+1}", use_column_width=True
             )
 
-    # Check if the uploaded file is a video
-    elif uploaded_file.type == "video/mp4":
-        st.write("Running detection on video...")
-
-        # Save uploaded video to a temporary file
+    elif file_extension == ".mp4":
+        # Process as video
         tfile = tempfile.NamedTemporaryFile(delete=False)
         tfile.write(uploaded_file.read())
         video_path = tfile.name
 
-        # Open video file using OpenCV
+        st.write("Running detection on video...")
+
+        # Open the video file
         cap = cv2.VideoCapture(video_path)
-        if not cap.isOpened():
-            st.error("Error opening video file")
-        else:
-            # Get video properties
-            fps = cap.get(cv2.CAP_PROP_FPS)
-            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            output_video_path = f"output_video.mp4"
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        fps = int(cap.get(cv2.CAP_PROP_FPS))
 
-            # Define the codec and create a VideoWriter object
-            fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-            out = cv2.VideoWriter(output_video_path, fourcc, fps, (width, height))
+        # Create a temporary file to save the output video
+        output_video_path = tempfile.mktemp(suffix=".mp4")
+        out = cv2.VideoWriter(
+            output_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height)
+        )
 
-            # Process each frame in the video
-            while cap.isOpened():
-                ret, frame = cap.read()
-                if not ret:
-                    break
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                break
 
-                # Convert frame to PIL Image
-                frame_pil = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+            # Convert frame to tensor and add batch dimension
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame_pil = Image.fromarray(frame_rgb)
+            image_tensor = transforms.ToTensor()(frame_pil).unsqueeze(0).to(device)
 
-                # Define the transformation
-                transform = transforms.Compose(
-                    [
-                        transforms.Resize((640, 640)),  # Resize image to 640x640 pixels
-                        transforms.ToTensor(),  # Convert PIL image to PyTorch tensor
-                    ]
-                )
-                
-                # Apply transformation to the frame
-                frame_tensor = transform(frame_pil).unsqueeze(0).to(device)
+            # Run inference on the frame
+            results = model(image_tensor)
 
-                # Run inference on the frame
-                results = model(frame_tensor)
+            # Plot bounding boxes on the frame
+            result_frame = results[0].plot()
 
-                # Draw bounding boxes on the frame
-                for result in results:
-                    frame_result = result.plot()
+            # Convert back to BGR for OpenCV and write the frame
+            result_frame_bgr = cv2.cvtColor(result_frame, cv2.COLOR_RGB2BGR)
+            out.write(result_frame_bgr)
 
-                # Convert result to BGR for OpenCV
-                frame_result_bgr = cv2.cvtColor(frame_result, cv2.COLOR_RGB2BGR)
+        cap.release()
+        out.release()
 
-                # Write the frame to the output video
-                out.write(frame_result_bgr)
+        # Display the output video
+        st.video(output_video_path)
 
-            # Release resources
-            cap.release()
-            out.release()
-
-            # Display the processed video
-            st.video(output_video_path)
-
-            # Optionally, provide a download link for the processed video
-            st.write("Download the processed video:")
-            with open(output_video_path, "rb") as video_file:
-                st.download_button(
-                    label="Download video",
-                    data=video_file,
-                    file_name="output_video.mp4",
-                    mime="video/mp4",
-                )
+    else:
+        st.error("Unsupported file type! Please upload an image or a video.")
