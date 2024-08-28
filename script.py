@@ -99,12 +99,15 @@ if uploaded_file is not None:
             if not ret:
                 break
 
-            # Resize and convert frame to tensor
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            frame_resized = cv2.resize(frame_rgb, (640, 640))
+            # Resize frame to fit model input
+            frame_resized = cv2.resize(frame, (640, 640))
+            frame_rgb = cv2.cvtColor(frame_resized, cv2.COLOR_BGR2RGB)
+
+            # Convert frame to tensor
+            frame_tensor = transforms.ToTensor()(frame_rgb).unsqueeze(0).to(device)
 
             # Run inference on the frame
-            results = model(frame_resized)
+            results = model(frame_tensor)
 
             # Plot bounding boxes on the original frame
             result_frame = results[0].plot()
@@ -130,7 +133,7 @@ if uploaded_file is not None:
         with open(output_video_path, "rb") as file:
             video_bytes = file.read()
 
-        # Display the video using st.video
+        # Display the video using st.video (using the file path)
         st.video(output_video_path)
 
         # Provide a download button for the processed video
