@@ -108,7 +108,8 @@ if uploaded_file is not None:
         st.write("Detection complete. Preparing to display video...")
 
         # Display the output video
-        st.video(output_video_path)
+        with open(output_video_path, "rb") as video_file:
+            st.video(video_file.read())
 
     else:
         st.error("Unsupported file type! Please upload an image or a video.")
