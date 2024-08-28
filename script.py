@@ -112,8 +112,11 @@ if uploaded_file is not None:
         # Ensure the video is completely written before trying to play it
         st.write("Detection complete. Preparing to display video...")
 
+        # Fix: Wait for the file to be fully written to disk
+        out.release()
+
         # Provide a video player for the processed video
-        st.video(output_video_path, format="video/mp4")
+        st.video(output_video_path)
 
         # Provide a download button for the processed video
         with open(output_video_path, "rb") as video_file:
