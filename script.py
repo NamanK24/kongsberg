@@ -29,6 +29,7 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file is not None:
     file_extension = os.path.splitext(uploaded_file.name)[1].lower()
+    no_detections = True  # Flag to track detections
 
     if file_extension in [".jpg", ".jpeg", ".png"]:
         # Process as image
@@ -52,6 +53,10 @@ if uploaded_file is not None:
 
         # Run inference on the image
         results = model(image_tensor)
+
+        # Check for detections
+        if results[0].boxes.shape[0] > 0:
+            no_detections = False
 
         # Iterate over the results and save/display each one
         for i, result in enumerate(results):
@@ -94,20 +99,30 @@ if uploaded_file is not None:
         # Create a progress bar
         progress_bar = st.progress(0)
 
+        # Define transform for resizing frames
+        transform = transforms.Compose(
+            [
+                transforms.ToPILImage(),
+                transforms.Resize((640, 640)),
+                transforms.ToTensor(),
+            ]
+        )
+
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
                 break
 
-            # Resize frame to fit model input
-            frame_resized = cv2.resize(frame, (640, 640))
-            frame_rgb = cv2.cvtColor(frame_resized, cv2.COLOR_BGR2RGB)
-
-            # Convert frame to tensor
-            frame_tensor = transforms.ToTensor()(frame_rgb).unsqueeze(0).to(device)
+            # Resize and convert frame to tensor
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame_tensor = transform(frame_rgb).unsqueeze(0).to(device)
 
             # Run inference on the frame
             results = model(frame_tensor)
+
+            # Check for detections
+            if results[0].boxes.shape[0] > 0:
+                no_detections = False
 
             # Plot bounding boxes on the original frame
             result_frame = results[0].plot()
@@ -129,12 +144,12 @@ if uploaded_file is not None:
 
         st.write("Detection complete. Preparing video for playback...")
 
-        # Automatically play the video
-        st.video(output_video_path)
-
-        # Automatically download the video after processing
+        # Read the processed video file
         with open(output_video_path, "rb") as file:
             video_bytes = file.read()
+
+        # Display the video using st.video
+        st.video(video_bytes)
 
         # Provide a download button for the processed video
         st.download_button(
@@ -150,3 +165,7 @@ if uploaded_file is not None:
 
     else:
         st.error("Unsupported file type! Please upload an image or a video.")
+
+    # Show an alert within Streamlit if no detections were made
+    if no_detections:
+        st.warning("Alert: No detections were found in the processed video.")
