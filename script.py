@@ -10,9 +10,9 @@ import tempfile
 # Initialize Twilio Client
 
 
-# account_sid = ""                           # ACCESS IT FROM KEY.TXT  
-# auth_token = ""                            # ACESS IT FROM KEY.TXT 
-# client = Client(account_sid, auth_token)
+account_sid = ""                           # ACCESS IT FROM KEY.TXT  
+auth_token = ""                            # ACESS IT FROM KEY.TXT 
+client = Client(account_sid, auth_token)
 
 # Force the use of CPU
 device = "cpu"
@@ -32,15 +32,15 @@ st.title("YOLOv8 Object Detection with Streamlit")
 
 
 # # Function to send WhatsApp notification
-# def send_whatsapp_notification(missing_classes):
-#     missing_classes_str = ", ".join(missing_classes)
-#     # Send WhatsApp Message with missing classes
-#     message = client.messages.create(
-#         from_="whatsapp:+14155238886",  # Twilio Sandbox WhatsApp number
-#         body=f"Alert: The following required equipment is missing: {missing_classes_str}",
-#         to="whatsapp:+917263002829",  # Replace with your WhatsApp number
-#     )
-#     print(f"WhatsApp notification sent. Message SID: {message.sid}")
+def send_whatsapp_notification(missing_classes):
+    missing_classes_str = ", ".join(missing_classes)
+    # Send WhatsApp Message with missing classes
+    message = client.messages.create(
+        from_="whatsapp:+14155238886",  # Twilio Sandbox WhatsApp number
+        body=f"Alert: The following required equipment is missing: {missing_classes_str}",
+        to="whatsapp:+917263002829",  # Replace with your WhatsApp number
+    )
+    print(f"WhatsApp notification sent. Message SID: {message.sid}")
 
 
 # File uploader for images and videos
@@ -99,9 +99,9 @@ if uploaded_file is not None:
 
         # Send a WhatsApp message if any required class is missing
 
-        
-        # if missing_classes:
-        #     send_whatsapp_notification(missing_classes)
+
+        if missing_classes:
+            send_whatsapp_notification(missing_classes)
 
         # Display the detected image
         for i, result in enumerate(results):
