@@ -2,9 +2,15 @@ import streamlit as st
 from ultralytics import YOLO
 from PIL import Image
 import torchvision.transforms as transforms
-import cv2
-import tempfile
 import os
+import cv2
+from twilio.rest import Client
+import tempfile
+
+# Initialize Twilio Client
+account_sid = "AC653384e9e5981a6930704965c78b73e3"  # Your Account SID from Twilio
+auth_token = "36f942e78368b994c3d5e9e7f596a7c9"  # Your Auth Token from Twilio
+client = Client(account_sid, auth_token)
 
 # Force the use of CPU
 device = "cpu"
@@ -21,6 +27,19 @@ model = load_model()
 model.to(device)
 
 st.title("YOLOv8 Object Detection with Streamlit")
+
+
+# Function to send WhatsApp notification
+def send_whatsapp_notification(missing_classes):
+    missing_classes_str = ", ".join(missing_classes)
+    # Send WhatsApp Message with missing classes
+    message = client.messages.create(
+        from_="whatsapp:+14155238886",  # Twilio Sandbox WhatsApp number
+        body=f"Alert: The following required equipment is missing: {missing_classes_str}",
+        to="whatsapp:+917263002829",  # Replace with your WhatsApp number
+    )
+    print(f"WhatsApp notification sent. Message SID: {message.sid}")
+
 
 # File uploader for images and videos
 uploaded_file = st.file_uploader(
@@ -54,11 +73,33 @@ if uploaded_file is not None:
         # Run inference on the image
         results = model(image_tensor)
 
-        # Check for detections
-        if results[0].boxes.shape[0] > 0:
-            no_detections = False
+        # List of required classes
+        required_classes = {
+            "Boots",
+            "Ear-protection",
+            "Glass",
+            "Glove",
+            "Helmet",
+            "Mask",
+            "Vest",
+        }
+        detected_classes = set()
 
-        # Iterate over the results and save/display each one
+        # Extract the class names from the model's detections
+        for result in results:
+            for box in result.boxes:
+                class_id = int(box.cls)
+                class_name = result.names[class_id]  # Get the class name
+                detected_classes.add(class_name)  # Add the detected class to the set
+
+        # Determine which classes are missing after processing the image
+        missing_classes = required_classes - detected_classes
+
+        # Send a WhatsApp message if any required class is missing
+        if missing_classes:
+            send_whatsapp_notification(missing_classes)
+
+        # Display the detected image
         for i, result in enumerate(results):
             result_img = result.plot()  # Create an image with bounding boxes drawn
             result_img_pil = Image.fromarray(result_img)  # Convert to PIL Image
@@ -72,6 +113,7 @@ if uploaded_file is not None:
             )
 
     elif file_extension == ".mp4":
+        # Process as video
         # Process as video
         tfile = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
         tfile.write(uploaded_file.read())
@@ -163,9 +205,11 @@ if uploaded_file is not None:
         os.unlink(video_path)
         os.unlink(output_video_path)
 
+        pass
+
     else:
         st.error("Unsupported file type! Please upload an image or a video.")
 
     # Show an alert within Streamlit if no detections were made
     if no_detections:
-        st.warning("Alert: No detections were found in the processed video.")
+        st.warning("Alert: No detections were found in the processed image.")
