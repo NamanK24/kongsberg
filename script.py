@@ -28,7 +28,7 @@ def load_model():
 model = load_model()
 model.to(device)
 
-st.title("YOLOv8 Object Detection with Streamlit")
+st.title("Personal Protective Equipment Detection")
 
 
 # # Function to send WhatsApp notification
