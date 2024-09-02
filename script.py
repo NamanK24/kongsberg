@@ -10,8 +10,8 @@ import tempfile
 # Initialize Twilio Client
 
 
-account_sid = "AC653384e9e5981a6930704965c78b73e"  # ACCESS IT FROM KEY.TXT
-auth_token = "36f942e78368b994c3d5e9e7f596a7c9"  # ACESS IT FROM KEY.TXT
+account_sid = "ACb81b9de0cac5fa9c99513c2efb9492ad"  # ACCESS IT FROM KEY.TXT
+auth_token = "a2da00df9dfe21c2207e4d6e4fb13e80"  # ACESS IT FROM KEY.TXT
 client = Client(account_sid, auth_token)
 
 # Force the use of CPU
