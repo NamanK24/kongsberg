@@ -10,8 +10,8 @@ import tempfile
 # Initialize Twilio Client
 
 
-account_sid = "ACb81b9de0cac5fa9c99513c2efb9492ad"  # ACCESS IT FROM KEY.TXT
-auth_token = "a2da00df9dfe21c2207e4d6e4fb13e80"  # ACESS IT FROM KEY.TXT
+account_sid = "AC384501142bbd70e23ab5cd4d04c83c3c"  # ACCESS IT FROM KEY.TXT
+auth_token = "124efbb841a22c3eb5b5f7e42ba0f943"  # ACESS IT FROM KEY.TXT
 client = Client(account_sid, auth_token)
 
 # Force the use of CPU
@@ -38,7 +38,7 @@ def send_whatsapp_notification(missing_classes):
     message = client.messages.create(
         from_="whatsapp:+14155238886",  # Twilio Sandbox WhatsApp number
         body=f"Alert: The following required equipment is missing: {missing_classes_str}",
-        to="whatsapp:+917263002829",  # Replace with your WhatsApp number
+        to="whatsapp:+918828231847",  # Replace with your WhatsApp number
     )
     print(f"WhatsApp notification sent. Message SID: {message.sid}")
 
